@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  retrieval-api:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    env_file:
+      - ../../.env
+    environment:
+      - PYTHONPATH=/app
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+    depends_on:
+      - ollama
+    networks:
+      - orca-network
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - orca-network
+
+volumes:
+  ollama_data:
+
+networks:
+  orca-network:
+    driver: bridge 

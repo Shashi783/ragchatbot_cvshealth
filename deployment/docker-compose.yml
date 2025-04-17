@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  # qdrant:
+  #   image: qdrant/qdrant:v1.8.3 # Use latest stable version
+  #   container_name: qdrant_db_orca
+  #   # qdrant_db_1:
+  #   build:
+  #     context: ../core/vector_db
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+
+  #   environment:
+  #     # - QDRANT__SERVICE__HTTP_PORT=6333
+  #     # - QDRANT__SERVICE__GRPC_PORT=6334
+  #     - QDRANT_FULL_SCAN_THRESHOLD=10000  # Does brute force searhc if num vectores are less than this, else will do HNSW (faster for large data)
+  #     - QDRANT_SEARCH_THREADS=4 # num search threads
+  #     - QDRANT_MAX_OPTIMIZATION_THREADS=8 # num indexing threads
+  #     - QDRANT_SNAPSHOT_INTERVAL_SEC=86400 # snapshot interval
+  #     - QDRANT_SNAPSHOT_PATH=/snapshots
+  #     - QDRANT_ENABLE_AUTH=true
+  #     - QDRANT_ENABLE_TELEMETRY=true ## enables prometheus compatible metrics at http://localhost:6334/metrics
+  #     - QDRANT__LOG_LEVEL=INFO 
+  #     - QDRANT_API_KEY=${QDRANT_API_KEY}  # Load authentication token from .env
+  #     - QDRANT__SERVICE__JWT_RBAC=true
+  #     # Add env variables for distributed setup here 
+
+  #   volumes:
+  #     - ../data/vector_db:/qdrant/storage  # Persistent storage
+  #     - ../data/snapshots:/snapshots
+  #     - ../data/logs/vector_db:/qdrant/logs      # Logging
+  #     # - ../config/qdrant-config.yaml:/qdrant/config.yaml  # Custom config (optional)
+  #   ports:
+  #     - "6333:6333"   # HTTP API
+  #     - "6334:6334"   # gRPC API
+  #   # ports:
+  #   #   - "${HTTP_PORT}:6333"
+  #   #   - "${GRPC_PORT}:6334"
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "50m"   # Rotate logs after 10MB
+  #       max-file: "6"     # Keep the last 3 log files
+  #   healthcheck:
+  #     test: ["CMD", "sh", "-c", "echo 'Success'"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   networks:
+  #     - deployment_network
+
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: nginx_proxy
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ../core/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - qdrant
+  #   restart: always
+  #   networks:
+  #     - deployment_network
+
+  # prometheus:
+  #   image: prom/prometheus
+  #   # volumes:
+  #   #   - ../config/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   ports:
+  #     - "9090:9090"
+  #   environment:
+  #     - PROMETHEUS_SCRAPE_INTERVAL=${PROMETHEUS_SCRAPE_INTERVAL}
+  #     - QDRANT_TARGET=${QDRANT_TARGET}
+  #     - PROMETHEUS_TARGET=${PROMETHEUS_TARGET}
+  #   networks:
+  #     - deployment_network
+
+  # grafana:
+  #   image: grafana/grafana
+  #   ports:
+  #     - "3001:3000"
+  #   networks:
+  #     - deployment_network
+
+  retrieval_api:
+    build:
+      context: ../
+      dockerfile: core/retrieval_api/Dockerfile
+    container_name: retrieval_api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env # Path to your .env file
+    volumes:
+      - ../data:/app/data/  # Persistent storage
+    # environment:
+      # - QDRANT_HOST=qdrant_db_orca
+      # - QDRANT_PORT=6333
+      # - QDRANT_API_KEY=${QDRANT_API_KEY}
+    # depends_on:
+    #   - qdrant
+    restart: unless-stopped
+    # networks:
+    #   - deployment_network
+
+
+# networks:
+#   deployment_network:
+#     driver: bridge
+
