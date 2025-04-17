@@ -1,6 +1,5 @@
 ### .env file
-copy the .env file from the below link to to Orca/deployment/ before spinning up the docker. 
-https://www.notion.so/Orca-docker-env-file-1ca68ba958b68071be14ef7b248a3c83?pvs=4
+copy the .env file from the below link to /deployment/
 
 ## Ingestion API
 Check out the [Ingestion API README](core/ingest/README.md) for more information.
