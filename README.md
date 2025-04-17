@@ -1,8 +1,6 @@
 ### .env file
 enter required secrets in .env as shown in env.example.
 
-## Ingestion API
-Check out the [Ingestion API README](core/ingest/README.md) for more information.
 
 ## Using Docker Compose
 
