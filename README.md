@@ -1,5 +1,5 @@
 ### .env file
-copy the .env file from the below link to /deployment/
+enter required secrets in .env as shown in env.example.
 
 ## Ingestion API
 Check out the [Ingestion API README](core/ingest/README.md) for more information.
