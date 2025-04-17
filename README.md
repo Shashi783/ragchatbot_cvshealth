@@ -1,0 +1,54 @@
+### .env file
+copy the .env file from the below link to to Orca/deployment/ before spinning up the docker. 
+https://www.notion.so/Orca-docker-env-file-1ca68ba958b68071be14ef7b248a3c83?pvs=4
+
+## Ingestion API
+Check out the [Ingestion API README](core/ingest/README.md) for more information.
+
+## Using Docker Compose
+
+1. go to deployment folder
+```sh
+cd deployment
+```
+
+2. Running the Vector DB using Docker Compose
+```sh
+sudo docker compose up -d
+```
+
+3. Check whether Docker is healthy or not using this command:
+```sh
+sudo docker ps
+```
+
+4. Stopping Docker
+```sh
+sudo docker compose down
+```
+
+
+## Install Docker (If Not Already Installed)
+
+1. Linux Installation:
+```sh
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable --now docker
+sudo systemctl status docker
+```
+
+#check if docker id is running
+'''ps aux | grep dockerd'''
+#If dockerd is not running, start it manually:
+'''sudo dockerd'''
+
+
+
+
+
+
+
+
+
+
