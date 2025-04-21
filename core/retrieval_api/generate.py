@@ -15,7 +15,7 @@ import qdrant_client
 import asyncio
 import nest_asyncio
 from tavily import TavilyClient
-from llama_index.core import StorageContext, Settings, load_index_from_storage
+from llama_index.core import StorageContext, Settings, load_index_from_storage,PromptHelper
 from llama_index.core.schema import QueryBundle, Node
 from llama_index.core.query_engine import CitationQueryEngine
 from llama_index.vector_stores.qdrant import QdrantVectorStore
@@ -83,6 +83,7 @@ class Generate:
         # llm_manager = LLMManager(settings_manager)
         
         # Configure LlamaIndex settings
+        Settings._prompt_helper = PromptHelper(context_window=20000)
         Settings.llm = self._model_manager.llm_model
         Settings.embed_model = self._model_manager.embed_model
 
@@ -236,7 +237,7 @@ class Generate:
                 ]
                 # greeting_response = self._model_manager.llm.stream_chat(greeting_prompt)
                 for text in self._model_manager.llm.stream_chat(greeting_prompt):
-                    print(f"Yielding message {text.delta}")  # Debugging log
+                    # logger.info(f"Yielding message {text.delta}")  # Debugging log
                     yield json.dumps({
                         "response_id": str(uuid.uuid4()),
                         "type": "greeting",
@@ -253,8 +254,8 @@ class Generate:
 
             # logger.info(f"Retrieved documents: {retrieved_docs}")
             logger.info(f"Score of retrieved docs: {[doc.score for doc in retrieved_docs]}")
-            for idx, doc in enumerate(retrieved_docs):
-                logger.info(f"Document {idx+1}: {doc.node.get_text()}")
+            # for idx, doc in enumerate(retrieved_docs):
+            #     logger.info(f"Document {idx+1}: {doc.node.get_text()}")
 
             if not retrieved_docs or max([doc.score for doc in retrieved_docs]) <= self._config("RAG_SIMILARITY_CUTOFF"):
                 logger.warning("No relevant contexts retrieved")
@@ -330,12 +331,12 @@ class Generate:
 
             # Generate related queries
             logger.info("Generating related queries...")
-            related_queries = self._model_manager.llm_model.complete(
+            related_queries = self._model_manager.llm.complete(
                 self._prompts.related_queries_template.format(
                     query=self._query,
                     sources="\n\n".join(doc.node.get_text() for doc in response.source_nodes),
                     answer=answer,
-                )
+                ),max_tokens=512
             ).text.strip()
 
             yield json.dumps({
@@ -345,19 +346,23 @@ class Generate:
             })
 
             # Generate conversation title if no chat history
-            if self._storage_manager.chat_hist is None:
-                logger.info("Generating conversation title...")
-                conversation_title = self._model_manager.llm_model.complete(
-                    self._prompts.conv_title_template.format(
-                        query=self._query, category=self._category_name
-                    )
-                ).text.strip()
+            try:
+                if self._storage_manager.chat_hist is None:
+                    logger.info("Generating conversation title...")
+                    conversation_title = self._model_manager.llm.complete(
+                        self._prompts.conv_title_template.format(
+                            query=self._query, category=self._category_name
+                        )
+                    ).text.strip()
 
-                yield json.dumps({
-                    "response_id": str(uuid.uuid4()),
-                    "type": "title",
-                    "text": conversation_title,
-                })
+                    yield json.dumps({
+                        "response_id": str(uuid.uuid4()),
+                        "type": "title",
+                        "text": conversation_title,
+                    })
+            except Exception as e:
+                logger.info(f"Error generating conversation title: {e}")
+                pass
 
             # Update chat history
             self._storage_manager.chat_hist = f"{self._refined_query}\n{answer}\n\n"
@@ -399,7 +404,7 @@ class Generate:
                     retrieved_counter += 1
                     contexts[str(retrieved_counter)] = {
                         "file_name": doc.metadata["file_name"],
-                        "page_num": doc.metadata["page_num"],
+                        # "page_num": doc.metadata["page_num"],
                         "chunk": doc.metadata["highlighted_chunk"],
                     }
                     answer = answer.replace(

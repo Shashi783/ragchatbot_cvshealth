@@ -19,4 +19,4 @@ RUN pip install --no-cache-dir -r requirements.lock
 EXPOSE 8080
 
 # Command to run the application
-CMD ["uvicorn", "core.retrieval_api.app:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"] 
+CMD ["uvicorn", "core.retrieval_api.app:app", "--host", "0.0.0.0", "--port", "8080", "--log-level", "info"] 

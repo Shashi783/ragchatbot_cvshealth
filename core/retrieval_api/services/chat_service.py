@@ -92,7 +92,6 @@ class ChatService:
                 yield json.dumps(chunk_data)  # Yield the modified JSON chunk
                 # yield chunk
             
-            # print(response_text.)
             # if response_text is not None:
             #     duration = time.perf_counter() - start_time
             #     logger.info(f"Response generation completed in {duration:.2f} seconds")

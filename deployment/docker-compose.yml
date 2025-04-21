@@ -89,7 +89,7 @@ services:
       dockerfile: core/retrieval_api/Dockerfile
     container_name: retrieval_api
     ports:
-      - "8000:8000"
+      - "8080:8080"
     env_file:
       - .env # Path to your .env file
     volumes:

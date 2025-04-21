@@ -61,14 +61,14 @@ class LLMManager:
                 self._llm = OpenAI(
                     model=model_name,
                     temperature=0.7,
-                    max_tokens=4096,
+                    max_tokens=2048,
                     api_key=self._settings.get_secret_value("OPENAI_API_KEY")
                 )
             elif model_type == "ANTHROPIC":
                 self._llm = Anthropic(
                     model=model_name,
                     temperature=0.7,
-                    max_tokens=4096,
+                    max_tokens=2048,
                     api_key=self._settings.get_secret_value("ANTHROPIC_API_KEY")
                 )
             else:
