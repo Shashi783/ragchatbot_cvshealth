@@ -1,53 +1,53 @@
 version: '3.8'
 
 services:
-  # qdrant:
-  #   image: qdrant/qdrant:v1.8.3 # Use latest stable version
-  #   container_name: qdrant_db_orca
-  #   # qdrant_db_1:
-  #   build:
-  #     context: ../core/vector_db
-  #     dockerfile: Dockerfile
-  #   restart: unless-stopped
+  qdrant:
+    image: qdrant/qdrant:v1.8.3 # Use latest stable version
+    container_name: qdrant_db_test
+    # qdrant_db_1:
+    build:
+      context: ../core/vector_db
+      dockerfile: Dockerfile
+    restart: unless-stopped
 
-  #   environment:
-  #     # - QDRANT__SERVICE__HTTP_PORT=6333
-  #     # - QDRANT__SERVICE__GRPC_PORT=6334
-  #     - QDRANT_FULL_SCAN_THRESHOLD=10000  # Does brute force searhc if num vectores are less than this, else will do HNSW (faster for large data)
-  #     - QDRANT_SEARCH_THREADS=4 # num search threads
-  #     - QDRANT_MAX_OPTIMIZATION_THREADS=8 # num indexing threads
-  #     - QDRANT_SNAPSHOT_INTERVAL_SEC=86400 # snapshot interval
-  #     - QDRANT_SNAPSHOT_PATH=/snapshots
-  #     - QDRANT_ENABLE_AUTH=true
-  #     - QDRANT_ENABLE_TELEMETRY=true ## enables prometheus compatible metrics at http://localhost:6334/metrics
-  #     - QDRANT__LOG_LEVEL=INFO 
-  #     - QDRANT_API_KEY=${QDRANT_API_KEY}  # Load authentication token from .env
-  #     - QDRANT__SERVICE__JWT_RBAC=true
-  #     # Add env variables for distributed setup here 
+    environment:
+      # - QDRANT__SERVICE__HTTP_PORT=6333
+      # - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT_FULL_SCAN_THRESHOLD=10000  # Does brute force searhc if num vectores are less than this, else will do HNSW (faster for large data)
+      - QDRANT_SEARCH_THREADS=4 # num search threads
+      - QDRANT_MAX_OPTIMIZATION_THREADS=8 # num indexing threads
+      - QDRANT_SNAPSHOT_INTERVAL_SEC=86400 # snapshot interval
+      - QDRANT_SNAPSHOT_PATH=/snapshots
+      - QDRANT_ENABLE_AUTH=true
+      - QDRANT_ENABLE_TELEMETRY=true ## enables prometheus compatible metrics at http://localhost:6334/metrics
+      - QDRANT__LOG_LEVEL=INFO 
+      - QDRANT_API_KEY=${QDRANT_API_KEY}  # Load authentication token from .env
+      - QDRANT__SERVICE__JWT_RBAC=true
+      # Add env variables for distributed setup here 
 
-  #   volumes:
-  #     - ../data/vector_db:/qdrant/storage  # Persistent storage
-  #     - ../data/snapshots:/snapshots
-  #     - ../data/logs/vector_db:/qdrant/logs      # Logging
-  #     # - ../config/qdrant-config.yaml:/qdrant/config.yaml  # Custom config (optional)
-  #   ports:
-  #     - "6333:6333"   # HTTP API
-  #     - "6334:6334"   # gRPC API
-  #   # ports:
-  #   #   - "${HTTP_PORT}:6333"
-  #   #   - "${GRPC_PORT}:6334"
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "50m"   # Rotate logs after 10MB
-  #       max-file: "6"     # Keep the last 3 log files
-  #   healthcheck:
-  #     test: ["CMD", "sh", "-c", "echo 'Success'"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #   networks:
-  #     - deployment_network
+    volumes:
+      - ../data/vector_db:/qdrant/storage  # Persistent storage
+      - ../data/snapshots:/snapshots
+      - ../data/logs/vector_db:/qdrant/logs      # Logging
+      # - ../config/qdrant-config.yaml:/qdrant/config.yaml  # Custom config (optional)
+    ports:
+      - "6333:6333"   # HTTP API
+      - "6334:6334"   # gRPC API
+    # ports:
+    #   - "${HTTP_PORT}:6333"
+    #   - "${GRPC_PORT}:6334"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"   # Rotate logs after 10MB
+        max-file: "6"     # Keep the last 3 log files
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo 'Success'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - deployment_network
 
   # nginx:
   #   image: nginx:latest
@@ -83,29 +83,33 @@ services:
   #   networks:
   #     - deployment_network
 
-  retrieval_api:
+  retrieval_api_service:
     build:
       context: ../
       dockerfile: core/retrieval_api/Dockerfile
-    container_name: retrieval_api
+    container_name: retrieval_api_service
     ports:
       - "8080:8080"
     env_file:
       - .env # Path to your .env file
     volumes:
+      - ../core:/app/core
       - ../data:/app/data/  # Persistent storage
+    command: >
+      sh -c "PYTHONPATH=/app uvicorn core.retrieval_api.app:app --host 0.0.0.0 --port 8080 --log-level info --reload"
     # environment:
-      # - QDRANT_HOST=qdrant_db_orca
+    #   - PYTHONPATH=/app 
+      # - QDRANT_HOST=qdrant_db_test
       # - QDRANT_PORT=6333
       # - QDRANT_API_KEY=${QDRANT_API_KEY}
-    # depends_on:
-    #   - qdrant
+    depends_on:
+      - qdrant
     restart: unless-stopped
-    # networks:
-    #   - deployment_network
+    networks:
+      - deployment_network
 
 
-# networks:
-#   deployment_network:
-#     driver: bridge
+networks:
+  deployment_network:
+    driver: bridge
 

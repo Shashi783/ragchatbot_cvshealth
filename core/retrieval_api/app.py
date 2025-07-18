@@ -19,7 +19,13 @@ from dotenv import load_dotenv
 
 project_root = str(Path(__file__).parent.parent.parent)
 sys.path.append(project_root)
-
+# from generate import Generate
+# from core.retrieval_api.managers.storage_manager import LocalStorageManager
+# from core.retrieval_api.managers.settings_manager import SettingsManager
+# from core.retrieval_api.managers import AppManager, PromptManager
+# from core.retrieval_api.secrets_manager import get_secret
+# # from core.retrieval_api.schemas.rag import RAG
+# from core.retrieval_api.services.chat_service import ChatService
 
 
 from core.retrieval_api.services.chat_service import ChatService
@@ -52,10 +58,12 @@ settings_manager = SettingsManager()
 
 # Initialize managers
 storage_manager = LocalStorageManager(settings_manager.get_config)
-llm_manager = LLMManager(settings_manager)
+llm_manager_chat = LLMManager(settings_manager, mode="CHAT")  # Use "chat" mode for chat service
+llm_manager_report = LLMManager(settings_manager, mode="REPORT")  # Use "report" mode for report service
 
 # Initialize chat service
-chat_service = ChatService(storage_manager, llm_manager, settings_manager)
+chat_service = ChatService(storage_manager, llm_manager_chat, settings_manager)
+report_service = ChatService(storage_manager, llm_manager_report, settings_manager)
 
 app = FastAPI(
     title="AltGAN API",
@@ -72,15 +80,10 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-
-
-
 @app.get("/health", tags=["Health Check"])
 async def health_check() -> JSONResponse:
     """Basic health check endpoint."""
     return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "OK"})
-
-
 
 @app.post("/v1/chat", tags=["Chat API"])
 async def get_answer(request: ChatRequest, background_tasks: BackgroundTasks) -> StreamingResponse:
@@ -95,6 +98,14 @@ async def get_answer(request: ChatRequest, background_tasks: BackgroundTasks) ->
             async for chunk in response_generator:
                 yield chunk.encode('utf-8')
 
+        # # Schedule chat history summarization
+        # background_tasks.add_task(
+        #     chat_service.save_chat_history, 
+        #     request.chat_id, 
+        #     storage_manager.chat_hist, 
+        #     settings_manager.get_config
+        # )
+        # Return streaming response
         return StreamingResponse(content=stream_results(), media_type="text/event-stream")
 
     except Exception as e:

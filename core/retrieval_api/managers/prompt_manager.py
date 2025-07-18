@@ -11,6 +11,7 @@ class PromptConfig(BaseModel):
     greeting_classifier: str = "greeting_classifier.prompt"
     citation_template: str = "citation_template.prompt"
     refine_template: str = "refine_template.prompt"
+    conv_title_template: str = "conversation_title.prompt"
     qa_template: str = "qa_template.prompt"
     related_queries_template: str = "related_queries.prompt"
     greeting: str = "greeting.prompt"
@@ -18,7 +19,9 @@ class PromptConfig(BaseModel):
     history_summarizer: str = "history_summarizer.prompt"
     rephrased_query: str = "rephrased_query.prompt"
     system_prompt: str = "system.prompt"
-
+    subquery: str = "subquery.prompt"
+    chat_subquery:str = "chat_subquery.prompt"
+    is_compound_prompt:str = "is_compound_query.prompt"
     class Config:
         arbitrary_types_allowed = True
 

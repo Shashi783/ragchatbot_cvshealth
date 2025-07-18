@@ -9,6 +9,7 @@ Follow these guidelines to incorporate markdown formatting wherever applicable:
 7. Convert any table into markdown table format using | for columns and - for the header row separator
 8. Add horizontal rules where appropriate. Preserve line breaks and paragraphs
 9. Do not convert citations or references such as [1] into footnotes in markdown format i.e. [^1]
+10. Do not mention Document Title information in the answer
 
 Ensure that the answer is generated in MLA 9th edition style format.
 Now it's your turn. Below are several numbered sources of information:

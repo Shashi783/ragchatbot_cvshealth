@@ -11,6 +11,8 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.llms import LLM
 from ..models.chat import ChatMessage
 from .settings_manager import SettingsManager
+
+
 # print(dir(llama_index.core.llms))
 
 # from llama_index.core.llms.types import BaseLLM
@@ -25,16 +27,17 @@ class LLMManager:
     _embed_model = None
     _llm_model = None
 
-    def __init__(self, settings: SettingsManager):
+    def __init__(self, settings: SettingsManager, mode: str = "chat"):
         """Initialize LLM manager.
         
         Args:
             settings: Settings manager instance
         """
         self._settings = settings
+        self._mode = mode.upper()  # Ensure mode is uppercase to match config keys
         self._llm: Optional[LLM] = None
         self._model_name: Optional[str] = None
-        self._load_llm()
+        self._load_llm(self._mode)
 
     def _load_embed_model(self) -> HuggingFaceEmbedding:
         """Load the embedding model."""
@@ -48,29 +51,106 @@ class LLMManager:
     @retry(
         stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=60)
     )
-    def _load_llm(self) -> None:
+
+    def _load_llm(self, mode = "CHAT") -> None:
         """Load the LLM model based on settings."""
         try:
             model_type = self._settings.get_setting("LLM_MODEL_TYPE", "OPENAI")
-            model_name = self._settings.get_setting("LLM_MODEL_NAME", "gpt-4")
+            config = self._settings._config.get(model_type, {})
+            mode_config = config.get(mode, config)  # fallback to flat config if not nested
+            model_name = mode_config.get("MODEL_NAME","gpt-4")
             self._model_name = model_name
-            
-            logger.info(f"Loading LLM model: {model_name}")
-            
+
+            logger.info(f"Loading LLM model: {model_name}, {mode_config}")
+
             if model_type == "OPENAI":
                 self._llm = OpenAI(
                     model=model_name,
-                    temperature=0.7,
-                    max_tokens=2048,
+                    temperature=mode_config.get("TEMPERATURE", None),
+                    max_tokens=mode_config.get("MAX_TOKENS", None),
                     api_key=self._settings.get_secret_value("OPENAI_API_KEY")
                 )
             elif model_type == "ANTHROPIC":
                 self._llm = Anthropic(
                     model=model_name,
-                    temperature=0.7,
-                    max_tokens=2048,
+                    temperature=mode_config.get("TEMPERATURE", None),
+                    max_tokens=mode_config.get("MAX_TOKENS", None),
                     api_key=self._settings.get_secret_value("ANTHROPIC_API_KEY")
                 )
+            elif model_type == "OPENROUTER":
+                from llama_index.llms.openrouter import OpenRouter
+                logger.info(f"Loading OpenRouter LLM {mode} model, max_tokens: {mode_config.get('MAX_TOKENS', None)}")
+                self._llm = OpenRouter(
+                    api_key=self._settings.get_secret_value("OPENROUTER_API_KEY"),
+                    max_tokens=mode_config.get("MAX_TOKENS", None),
+                    context_window=mode_config.get("CONTEXT_WINDOW", 8192),
+                    model=model_name,
+                    stream= True
+                )
+
+                # lc_llm = ChatOpenAI(
+                # model=model_name,  # or any supported model
+                # temperature=self._settings._config.get(model_type, {}).get("TEMPERATURE", None),
+                # base_url="https://openrouter.ai/api/v1",
+                # api_key=self._settings.get_secret_value("OPENROUTER_API_KEY"),
+                # )
+                logger.info("no error at OpenRouter")
+
+                # self._llm = LangChainLLM(llm=lc_llm)
+            else:
+                raise ValueError(f"Unsupported LLM model type: {model_type}")
+                
+            logger.info(f"Successfully loaded LLM model: {model_name}")
+            
+        except Exception as e:
+            logger.error(f"Error loading LLM model: {str(e)}")
+            raise
+
+    def _load_llm_dynamic(self, mode = "CHAT") -> None:
+        """Load the LLM model based on settings."""
+        try:
+            model_type = self._settings.get_setting("LLM_MODEL_TYPE", "OPENAI")
+            config = self._settings._config.get(model_type, {})
+            mode_config = config.get(mode, config)  # fallback to flat config if not nested
+            model_name = mode_config.get("MODEL_NAME","gpt-4")
+            self._model_name = model_name
+
+            logger.info(f"Loading LLM model in dynamic: {model_name}, {mode_config}")
+
+            if model_type == "OPENAI":
+                self._llm = OpenAI(
+                    model=model_name,
+                    temperature=mode_config.get("TEMPERATURE", None),
+                    max_tokens=mode_config.get("MAX_TOKENS", None),
+                    api_key=self._settings.get_secret_value("OPENAI_API_KEY")
+                )
+            elif model_type == "ANTHROPIC":
+                self._llm = Anthropic(
+                    model=model_name,
+                    temperature=mode_config.get("TEMPERATURE", None),
+                    max_tokens=mode_config.get("MAX_TOKENS", None),
+                    api_key=self._settings.get_secret_value("ANTHROPIC_API_KEY")
+                )
+            elif model_type == "OPENROUTER":
+                from llama_index.llms.openrouter import OpenRouter
+                logger.info(f"Loading OpenRouter LLM {mode} model, max_tokens: {mode_config.get('MAX_TOKENS', None)}")
+                self._llm = OpenRouter(
+                    api_key=self._settings.get_secret_value("OPENROUTER_API_KEY"),
+                    max_tokens=mode_config.get("MAX_TOKENS", None),
+                    context_window=mode_config.get("CONTEXT_WINDOW", 8192),
+                    model=model_name,
+                    stream= True
+                )
+
+                # lc_llm = ChatOpenAI(
+                # model=model_name,  # or any supported model
+                # temperature=self._settings._config.get(model_type, {}).get("TEMPERATURE", None),
+                # base_url="https://openrouter.ai/api/v1",
+                # api_key=self._settings.get_secret_value("OPENROUTER_API_KEY"),
+                # )
+                logger.info("no error at OpenRouter")
+
+                # self._llm = LangChainLLM(llm=lc_llm)
             else:
                 raise ValueError(f"Unsupported LLM model type: {model_type}")
                 
@@ -111,11 +191,12 @@ class LLMManager:
         Returns:
             Dict[str, Any]: Model configuration
         """
+        model_type = self._settings.get_setting("LLM_MODEL_TYPE", "OPENAI")
         return {
-            "model_type": self._settings.get_setting("LLM_MODEL_TYPE", "OPENAI"),
+            "model_type": model_type,
             "model_name": self.model_name,
-            "temperature": 0.7,
-            "max_tokens": 4096
+            "temperature": self._settings._config.get(model_type, {}).get("TEMPERATURE", None),
+            "max_tokens": self._settings._config.get(model_type, {}).get("MAX_TOKENS", None)
         }
 
     @property
@@ -132,7 +213,7 @@ class LLMManager:
             self._llm_model = self._load_llm()
         return self._llm_model
 
-    async def generate_response(self, message: str) -> str:
+    async def acomplete(self, prompt: str) -> str:
         """Generate a response using the LLM model.
         
         Args:

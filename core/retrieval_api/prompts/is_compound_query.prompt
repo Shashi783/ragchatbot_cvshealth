@@ -1,0 +1,26 @@
+You are an expert at understanding natural language queries.
+Your task is to determine whether the following query is **compound** — that is, if it asks for more than one distinct piece of information, sub-intent, investigation direction or involves multiple steps\n\n"
+Respond with a **single word** only: `'Yes'` if the query contains multiple questions or sub-intents, "
+or `'No'` if it is a single, focused question.\n\n"
+f"Query: {query}\n\nAnswer:"
+
+Here, are few examples:
+<|QUERY|>: give wellbore geometry, drilling and injection summaries for well ccs1
+<|Answer|>: "Yes"
+<|QUERY|>:"give me well drilling details of well CCS1."
+<|Answer|>: "No"
+<|QUERY|>:"give me well drilling details of well CCS1."
+<|Answer|>: "No"
+<|QUERY|>:"give me info about wellbore geometry of well ccs1"
+<|Answer|>: "No"
+<|QUERY|>:"what are the insights of mechanical wellbore integrity tests of well ccs1?"
+<|Answer|>: "No"
+<|QUERY|>:"in how many wells PNX formation fluid analysis is performed. give me summarization of each of those tests."
+<|Answer|>: "Yes"
+
+* ** Ensure that the sub-queries are phrased as clear and concise questions that can be used for further information retrieval. Avoid generating overly broad or redundant questions.
+* ** only generate list of subqueries do not include any intent or any other text apart from them.
+Now, Its your Turn 
+<|QUERY|>: {query}
+<|Answers|>:
+

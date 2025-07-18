@@ -20,7 +20,7 @@ This codebase is a Retrieval Augmented Generation (RAG) API that leverages the p
 
 
 ## Features
-- **Query Processing**: The API can handle user queries related to the Finance and Oil & Gas domains. It performs query understanding, document retrieval, and answer generation using state-of-the-art language models and vector databases.
+- **Query Processing**: The API can handle user queries related to the healthcare. It performs query understanding, document retrieval, and answer generation using state-of-the-art language models and vector databases.
 
 - **Document Retrieval**: The codebase utilizes the LlamaIndex library to index and store documents in a vector database (Qdrant). It employs efficient vector similarity search to retrieve the most relevant documents for a given query.
 
@@ -48,62 +48,49 @@ This codebase is a Retrieval Augmented Generation (RAG) API that leverages the p
 
 
 ## Installation Guide
+1. Clone the repository:
 
-
-
-### .env file
-copy the .env file to retrieval_api/deployment/ before spinning up the docker
-
-
-## Using Docker Compose
-
-1. go to deployment folder
-```sh
-cd deployment
 ```
-2. Running the Vector DB using Docker Compose
-```sh
-sudo docker compose up --build
+git clone <repo link>
 ```
 
-3. Check whether Docker is healthy or not using this command:
-```sh
-sudo docker ps
+2. Navigate to the project directory:
+
+```
+cd retrieval_api
 ```
 
-### Stopping Docker
-```sh
-sudo docker compose down
+3. Create a virtual environment and activate it:
+
+```
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-## Health Check Commands
+4. Install the required dependencies:
 
-1. Get Qdrant Metrics from this Endpoint:
-```sh
-curl http://localhost:6333/metrics
+
+```
+if ! command -v cargo &> /dev/null; then
+    echo "Rust is not installed. Installing Rust..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source $HOME/.cargo/env
+fi
 ```
 
-## Install Docker (If Not Already Installed)
-
-1. Linux Installation:
-```sh
-sudo apt update
-sudo apt install -y docker.io
-sudo systemctl enable --now docker
-sudo systemctl status docker
+```
+source $HOME/.cargo/env
 ```
 
-#check if docker id is running
-'''ps aux | grep dockerd'''
-#If dockerd is not running, start it manually:
-'''sudo dockerd'''
-
+```
+pip install -r requirements.txt
+```
 
 5. Set up the necessary AWS resources:
-   - Create a S3 bucket/local storage for storing logs and chat histories.
+   - Create a S3 bucket for storing logs and chat histories.
    - Create an AWS Secrets Manager secret to store API keys and other sensitive information.
 
-6. Update the configuration file with the appropriate values for your AWS/local resources, API keys, and other settings.
+6. Update the configuration file with the appropriate values for your AWS resources, API keys, and other settings.
 
 7. Store your API keys and other sensitive information in the AWS Secrets Manager (OPENAI_API_KEY, ANTHROPIC_API_KEY, COHERE_API_KEY, QDRANT_URL, QDRANT_API_KEY, TAVILY_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY).
 
@@ -118,13 +105,13 @@ The application configuration is managed through the `config/config.yaml` file. 
 - PROMPT_DIR: The directory where prompt templates are stored.
 - OPENAI, OLLAMA, ANTHROPIC: Configuration settings for the respective language models.
 - PDF_BASE_URL: The base URL for accessing PDF documents.
-- S3_LOGS_BUCKET, S3_CHAT_HISTORY, S3_PERSIST_BUCKET, S3_PERSIST_DIR:Optional: AWS S3 bucket and directory settings for logs, chat histories, and persistent data.
-- SECRETS_MANAGER: Optional: The name of the AWS Secrets Manager secret containing your API keys and other sensitive information.
-- CLOUDWATCH_LOG_GROUP, CLOUDWATCH_LOG_STREAM: Optional:CloudWatch log group and stream names for logging.
+- S3_LOGS_BUCKET, S3_CHAT_HISTORY, S3_PERSIST_BUCKET, S3_PERSIST_DIR: AWS S3 bucket and directory settings for logs, chat histories, and persistent data.
+- SECRETS_MANAGER: The name of the AWS Secrets Manager secret containing your API keys and other sensitive information.
+- CLOUDWATCH_LOG_GROUP, CLOUDWATCH_LOG_STREAM: CloudWatch log group and stream names for logging.
 - QDRANT_ENABLE_HYBRID: Whether to enable hybrid search in Qdrant.
 - FASTEMBED_SPARSE_MODEL: The name of the FastEmbed sparse model to use for document embeddings.
 - RAG_SIMILARITY_CUTOFF, RAG_SIMILARITY_TOP_K, RAG_RERANKED_TOP_N, RAG_CITATION_CHUNK_SIZE, RAG_CITATION_CHUNK_OVERLAP, RAG_STREAMING: Configuration settings for the RAG system.
-- AWS_REGION:Optional: The AWS region where your resources are located.
+- AWS_REGION: The AWS region where your resources are located.
 
 
 ## Usage
@@ -133,17 +120,20 @@ The application configuration is managed through the `config/config.yaml` file. 
 2. Run the FastAPI application:
 
 ```
-sudo docker compose up --build
+uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
 3. Send a POST request to the `/v1/chat` endpoint with the following JSON payload:
 
 ```json
 {
-    "chat_id": "testchat1",
-    "message": "which company owns IBDP field?",
-    "metadata": {}
-  }
+  "chat_id": "<unique_chat_id>",
+  "query": "<user_query>",
+  "category": "<category>",
+  "file_name": "<optional_file_name>",
+  "collection_name": "<optional_collection_name>",
+  "persist_dir": "<optional_persist_directory>"
+}
 ```
 
 4. The API will return a streaming response with the following events:
@@ -153,6 +143,35 @@ sudo docker compose up --build
    - **related**: Suggested related queries based on the original query and answer.
    - **title** (optional): A suggested title for the conversation thread.
 
+
+
+## Project Structure
+```
+ratrieval-api/
+├── config/
+│   ├── config.yaml
+│   └── config.yaml.example
+├── prompts/
+│   ├── citation_template.prompt
+│   ├── conversation_title.prompt
+│   ├── greeting.prompt
+│   ├── greeting_classifier.prompt
+│   ├── history_summarizer.prompt
+│   ├── profanity_filter.prompt
+│   ├── qa_template.prompt
+│   ├── refine_template.prompt
+│   ├── related_queries.prompt
+│   ├── rephrased_query.prompt
+│   ├── system.prompt
+│   └── tavily.prompt
+├── .gitignore
+├── amazon-cloudwatch-agent.json
+├── app.py
+├── generate.py
+├── README.md
+├── requirements.txt
+└── secrets_manager.py
+```
 
 
 ## Troubleshooting
@@ -182,11 +201,21 @@ If you encounter any other issues or errors, please check the application logs f
 
 
 ## Acceptable Usage Policy
+This API is intended for legitimate and lawful purposes only. Users are strictly prohibited from using the API for any illegal activities, including but not limited to:
+- Engaging in hate speech, discrimination, or harassment.
+- Violating intellectual property rights or privacy laws.
+- Attempting to bypass security measures or gain unauthorized access.
 
+The API provider reserves the right to terminate access or take appropriate legal action against users who violate this policy.
 
 
 ## Risks and Limitations
+While every effort has been made to ensure the accuracy and reliability of the information provided by this API, it is important to note that the responses generated are based on the training data and algorithms used by the underlying language models. As such, there is a possibility of errors, biases, or inconsistencies in the generated content.
 
+Users should exercise caution and critical thinking when interpreting and acting upon the information provided by the API. It is recommended to cross-reference and verify the information from authoritative sources whenever possible.
+
+Additionally, the API is subject to the limitations and constraints of the language models and vector databases used, which may impact performance, accuracy, or availability.
 
 
 ## Disclaimer
+*The information provided by this API is for general informational purposes only and should not be considered professional advice. Users are solely responsible for their use of the API and the information obtained from it, and they should consult with appropriate professionals for specific advice or guidance.*

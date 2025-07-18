@@ -17,7 +17,7 @@ services:
     depends_on:
       - ollama
     networks:
-      - orca-network
+      - chat_network
 
   ollama:
     image: ollama/ollama:latest
@@ -26,11 +26,11 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     networks:
-      - orca-network
+      - chat_network
 
 volumes:
   ollama_data:
 
 networks:
-  orca-network:
+  chat_network:
     driver: bridge 
