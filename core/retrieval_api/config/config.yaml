@@ -10,9 +10,9 @@ LOCAL_CHAT_HISTORY_DIR: ../data/chat_history
 
 OPENAI:
   CHAT:
-    MODEL_NAME: gpt-4
+    MODEL_NAME: gpt-3.5-turbo-0125
     MAX_TOKENS: 1024
-    TEMPERATURE: 0.3
+    TEMPERATURE: 0.6
     TOP_P: 0.9
     REQUEST_TIMEOUT: 180.0
     CONTEXT_WINDOW: 8192
@@ -52,9 +52,9 @@ ANTHROPIC:
     REQUEST_TIMEOUT: 600.0
 
 PDF_BASE_URL: https://rag-llm.s3.us-east-2.amazonaws.com/
-S3_LOGS_BUCKET: altgan-logs
+S3_LOGS_BUCKET: ag-logs
 S3_CHAT_HISTORY: chat_logs
-S3_PERSIST_BUCKET: altgan-persist
+S3_PERSIST_BUCKET: ag-persist
 S3_PERSIST_DIR: /home/ubuntu
 
 AWS_REGION: ap-south-1

@@ -172,6 +172,7 @@ chat_history/
 persist/
 storage/
 temp/
+tests/
 
 
 # PyPI configuration file

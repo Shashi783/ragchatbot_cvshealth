@@ -59,11 +59,10 @@ settings_manager = SettingsManager()
 # Initialize managers
 storage_manager = LocalStorageManager(settings_manager.get_config)
 llm_manager_chat = LLMManager(settings_manager, mode="CHAT")  # Use "chat" mode for chat service
-llm_manager_report = LLMManager(settings_manager, mode="REPORT")  # Use "report" mode for report service
 
 # Initialize chat service
 chat_service = ChatService(storage_manager, llm_manager_chat, settings_manager)
-report_service = ChatService(storage_manager, llm_manager_report, settings_manager)
+# report_service = ChatService(storage_manager, llm_manager_report, settings_manager)
 
 app = FastAPI(
     title="AltGAN API",
