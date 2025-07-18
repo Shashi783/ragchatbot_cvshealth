@@ -3,7 +3,7 @@
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [Features](#features)
+- [Key Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation Guide](#installation-guide)
 - [Configuration](#configuration)
@@ -13,23 +13,56 @@
 - [Acceptable Usage Policy](#acceptable-usage-policy)
 
 ## Introduction
-This codebase is a Retrieval Augmented Generation (RAG) API that leverages the power of large language models (LLMs) and vector databases to provide accurate and relevant answers to user queries. It is designed to handle queries related to specific domains, such as Finance and Oil & Gas, by retrieving and synthesizing information from a knowledge base of documents.
+### Advanced RAG System for Enhanced Q&A
+This project implements an advanced Retrieval-Augmented Generation (RAG) system designed to provide accurate, context-aware, and highly responsive answers to user queries. By integrating asynchronous streaming, intelligent query processing, a robust knowledge retrieval mechanism, and a flexible response generation pipeline, it aims to deliver a superior user experience.
 
+## Key Features
 
-## Features
-- **Query Processing**: The API can handle user queries related to the healthcare. It performs query understanding, document retrieval, and answer generation using state-of-the-art language models and vector databases.
+### Asynchronous Streaming
 
-- **Document Retrieval**: The codebase utilizes the LlamaIndex library to index and store documents in a vector database (Qdrant). It employs efficient vector similarity search to retrieve the most relevant documents for a given query.
+The entire response generation process operates asynchronously, delivering responses to the user token-by-token. This approach significantly enhances the user experience by providing immediate feedback and reducing perceived latency, rather than requiring the user to wait for the complete response to be generated.
 
-- **Answer Generation**: The API generates human-readable answers by synthesizing information from the retrieved documents. It uses large language models to generate coherent and context-aware responses.
+### Query Pre-processing
 
-- **Citation Support**: The API cites the relevant sources used to generate the answer, providing transparency and credibility to the information presented.
+Before engaging the full RAG pipeline, incoming user queries undergo several pre-processing steps:
 
-- **Related Queries**: In addition to the main answer, the API suggests related queries that users might be interested in exploring further.
+* **Greeting Detection**: The system intelligently identifies simple greetings (e.g., "hello") and responds with a pre-defined, quick greeting, bypassing the more complex RAG pipeline for common conversational openers.
+* **Chat History Integration**: Previous turns in the conversation are incorporated into the current query. This provides essential context for follow-up questions, enabling more coherent and relevant responses.
+* **Query Decomposition**: The system includes a sophisticated `_decompose_query` logic that breaks down complex, multi-part questions into simpler, more manageable sub-questions. This decomposition leads to more precise and accurate answers by addressing each component of the original query individually.
 
-- **Conversation History**: The API maintains a conversation history for each unique chat id, allowing for context-aware responses and better continuity in the dialogue.
+### Retrieval from Knowledge Base
 
-- **Deployment and Monitoring**: The codebase is designed to be deployed on AWS infrastructure, with support for logging and monitoring using CloudWatch.
+The core of the RAG system relies on efficient and intelligent information retrieval:
+
+* **Vector Database (Qdrant)**: Information from the knowledge base is stored and indexed within a Qdrant vector database.
+* **Semantic Search**: Upon receiving a query, it is transformed into a vector embedding. This embedding is then used to perform a semantic similarity search within Qdrant, retrieving the most relevant document chunks.
+* **Post-processing and Re-ranking**: Retrieved documents undergo a rigorous post-processing phase using tools like `CohereRerank`. This step re-orders and refines the search results, ensuring that only the most highly relevant and authoritative document snippets are passed to the Large Language Model (LLM) for response generation.
+
+### Fallback to Web Search
+
+To enhance its versatility and ability to answer a broader range of questions:
+
+* **External Search Capability**: If the retrieval scores from the internal knowledge base fall below a predefined threshold, indicating insufficient relevant information, the system is equipped to perform a web search. This is facilitated through integration with the Tavily search API.
+* **Comprehensive Coverage**: This fallback mechanism ensures that the system can still attempt to answer queries that lie outside its pre-loaded knowledge base, providing a more comprehensive Q&A experience.
+
+### Response Generation (Synthesis)
+
+The final answer is meticulously crafted to be informative and well-sourced:
+
+* **Large Language Model (LLM) Integration**: The refined query and the retrieved contextual documents are fed into a powerful LLM. The system is flexible and can be configured to utilize models from leading providers such as OpenAI, Anthropic, or Cohere.
+* **CitationQueryEngine (LlamaIndex)**: Leveraging `LlamaIndex`'s `CitationQueryEngine`, the LLM not only generates a coherent answer but also simultaneously provides precise citations to the source documents used, enhancing trustworthiness and verifiability.
+
+### Structured, Multi-part Response
+
+The API's output is designed for clarity and utility, yielding a stream of structured JSON objects rather than a single block of text:
+
+* **`tokens`**: The generated answer is streamed back to the user token by token, ensuring real-time display.
+* **`answer`**: The complete, final answer, enriched with embedded markdown links that point directly to the cited source documents.
+* **`context`**: A JSON object containing rich metadata for each source document utilized in the answer. This includes details such as the `document name`, `page number`, and a direct `link to the source file` (typically hosted on S3).
+* **`related`**: A dynamically generated list of suggested follow-up questions from the LLM, designed to guide the user towards further exploration and engagement with the topic.
+* **`title`**: For new conversations, a suitable and descriptive title is automatically generated (e.g., "Allstate Policy Details"), providing a clear overview of the conversation's subject.
+
+- **Deployment and Monitoring**: The codebase is designed to be deployed using dockers, with support for logging and monitoring using CloudWatch.
 
 - **Modular Design**: The codebase follows a modular design, making it easy to extend, maintain, and customize various components, such as prompt templates, vector stores, and language models.
 
